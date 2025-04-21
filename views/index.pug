@@ -1,0 +1,8 @@
+extends layout
+
+block content
+  h2 Popular Cities
+  ul
+    each city in cities
+      li
+        a(href=`/city/${city.name}`) #{city.name}, #{city.country}

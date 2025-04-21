@@ -1,0 +1,10 @@
+extends layout
+
+block content
+  h2 Weather in #{city}
+  if weather && weather.main
+    p Temperature: #{weather.main.temp} °C
+    p Weather: #{weather.weather[0].description}
+    p Wind Speed: #{weather.wind.speed} m/s
+  else
+    p Sorry, no weather data available.
