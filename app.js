@@ -1,12 +1,14 @@
 const express = require("express");
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const dotenv = require("dotenv");
+const cors = require("cors");
+
 
 dotenv.config();
 console.log("GEODB API KEY:", process.env.GEODB_API_KEY);
 
-
 const app = express();
+app.use(cors());
 const port = process.env.PORT || 3000;
 
 // Middleware
@@ -16,7 +18,7 @@ app.set("view engine", "pug");
 // Home Route – shows list of cities (GeoDB)
 app.get("/", async (req, res) => {
   const geoUrl = "https://wft-geo-db.p.rapidapi.com/v1/geo/cities?limit=5&sort=-population";
-  
+
   const options = {
     method: "GET",
     headers: {
@@ -32,6 +34,40 @@ app.get("/", async (req, res) => {
   } catch (err) {
     console.error("GeoDB Error:", err);
     res.send("Failed to load cities");
+  }
+});
+
+//  New JSON route for React frontend
+app.get("/api/cities", async (req, res) => {
+  const geoUrl = "https://wft-geo-db.p.rapidapi.com/v1/geo/cities?limit=5&sort=-population";
+
+  const options = {
+    method: "GET",
+    headers: {
+      "X-RapidAPI-Key": process.env.GEODB_API_KEY,
+      "X-RapidAPI-Host": "wft-geo-db.p.rapidapi.com"
+    }
+  };
+
+  try {
+    const response = await fetch(geoUrl, options);
+    const data = await response.json();
+
+    console.log("GOT FROM GeoDB:", data);
+
+    // ✅ NEW: handle rate limit message
+    if (data.message) {
+      return res.status(429).json({ error: "Rate limit exceeded. Please wait a moment." });
+    }
+
+    if (!data || !data.data || !Array.isArray(data.data)) {
+      return res.status(500).json({ error: "Invalid API response" });
+    }
+
+    res.json(data.data);
+  } catch (err) {
+    console.error("API JSON error:", err.message || err);
+    res.status(500).json({ error: "Failed to load cities" });
   }
 });
 
